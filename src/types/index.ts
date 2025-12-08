@@ -30,6 +30,9 @@ export type Category =
   | 'furniture'
   | 'clothing'
   | 'sports'
+  | 'kitchen'
+  | 'bathroom'
+  | 'shoes'
   | 'other';
 
 export interface Message {
@@ -56,6 +59,9 @@ export const CATEGORIES: { value: Category; label: string; icon: string }[] = [
   { value: 'furniture', label: 'Furniture', icon: '🪑' },
   { value: 'clothing', label: 'Clothing', icon: '👕' },
   { value: 'sports', label: 'Sports', icon: '⚽' },
+  { value: 'kitchen', label: 'Kitchen', icon: '🍳' },
+  { value: 'bathroom', label: 'Bathroom', icon: '🛁' },
+  { value: 'shoes', label: 'Shoes', icon: '👟' },
   { value: 'other', label: 'Other', icon: '📦' },
 ];
 
