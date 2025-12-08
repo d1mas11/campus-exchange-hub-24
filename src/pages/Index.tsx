@@ -4,7 +4,8 @@ import { ItemCard } from '@/components/items/ItemCard';
 import { CategoryFilter } from '@/components/items/CategoryFilter';
 import { mockItems } from '@/data/mockData';
 import { Category } from '@/types';
-import { Sparkles } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,21 +27,24 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearch={setSearchQuery} />
+      <Header />
 
       <main className="container py-6">
-        {/* Hero Section */}
-        <section className="mb-8 rounded-2xl gradient-hero p-8 text-primary-foreground animate-fade-in">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5" />
-            <span className="text-sm font-medium opacity-90">Student Marketplace</span>
-          </div>
-          <h1 className="text-3xl font-bold mb-2 md:text-4xl">
-            Buy & Sell Within Your Campus
+        {/* Hero Search Section */}
+        <section className="mb-8 animate-fade-in">
+          <h1 className="text-2xl font-bold text-foreground mb-4 md:text-3xl">
+            What are you looking for?
           </h1>
-          <p className="opacity-90 max-w-lg">
-            Find great deals on textbooks, electronics, furniture, and more from fellow students at your university.
-          </p>
+          <div className="relative max-w-2xl">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search for textbooks, electronics, furniture..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-6 text-lg bg-secondary border-0 rounded-xl shadow-card"
+            />
+          </div>
         </section>
 
         {/* Filters */}
