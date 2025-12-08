@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, User, Plus, Menu, X, Home } from 'lucide-react';
+import { MessageCircle, User, Plus, Menu, X, Home, Heart, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,8 @@ export function Header() {
   const navItems = [
     { to: '/', label: 'Browse', icon: Home },
     { to: '/create', label: 'Sell', icon: Plus },
+    { to: '/favourites', label: 'Favourites', icon: Heart },
+    { to: '/pending', label: 'Pending', icon: Clock },
     { to: '/messages', label: 'Messages', icon: MessageCircle },
     { to: '/profile', label: 'Profile', icon: User },
   ];
