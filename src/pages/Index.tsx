@@ -2,14 +2,19 @@ import { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { ItemCard } from '@/components/items/ItemCard';
 import { CategoryFilter } from '@/components/items/CategoryFilter';
+import { FilterPanel } from '@/components/items/FilterPanel';
 import { mockItems } from '@/data/mockData';
-import { Category } from '@/types';
+import { Category, Condition } from '@/types';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedConditions, setSelectedConditions] = useState<Condition[]>([]);
+  
+  const maxPrice = useMemo(() => Math.max(...mockItems.map((item) => item.price)), []);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPrice]);
 
   const filteredItems = useMemo(() => {
     return mockItems.filter((item) => {
@@ -21,9 +26,15 @@ const Index = () => {
       const matchesCategory =
         selectedCategory === null || item.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
+      const matchesCondition =
+        selectedConditions.length === 0 || selectedConditions.includes(item.condition);
+
+      const matchesPrice =
+        item.price >= priceRange[0] && item.price <= priceRange[1];
+
+      return matchesSearch && matchesCategory && matchesCondition && matchesPrice;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, selectedConditions, priceRange]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,6 +76,13 @@ const Index = () => {
               ? `${filteredItems.length} items in ${selectedCategory}`
               : `${filteredItems.length} items available`}
           </h2>
+          <FilterPanel
+            selectedConditions={selectedConditions}
+            onConditionsChange={setSelectedConditions}
+            priceRange={priceRange}
+            onPriceRangeChange={setPriceRange}
+            maxPrice={maxPrice}
+          />
         </div>
 
         {/* Items Grid */}
