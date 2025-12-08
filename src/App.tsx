@@ -11,6 +11,8 @@ import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
+import Favourites from "./pages/Favourites";
+import Pending from "./pages/Pending";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/create" element={<CreateListing />} />
+          <Route path="/favourites" element={<Favourites />} />
+          <Route path="/pending" element={<Pending />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
