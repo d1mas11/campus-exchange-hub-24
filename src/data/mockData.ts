@@ -37,6 +37,7 @@ export const mockItems: Item[] = [
     description: 'Barely used calculus textbook. Perfect condition with no highlights or notes. Great for MATH 101 and 102.',
     price: 45,
     category: 'textbooks',
+    condition: 'very-good',
     images: [
       'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&h=600&fit=crop',
       'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&h=600&fit=crop',
@@ -55,6 +56,7 @@ export const mockItems: Item[] = [
     description: 'Selling my MacBook Pro because I upgraded. 256GB SSD, 8GB RAM. Comes with original charger. Minor scratches on the bottom.',
     price: 899,
     category: 'electronics',
+    condition: 'second-hand',
     images: [
       'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop',
     ],
@@ -72,6 +74,7 @@ export const mockItems: Item[] = [
     description: 'Comfortable office chair in good condition. Height adjustable. Perfect for long study sessions.',
     price: 35,
     category: 'furniture',
+    condition: 'second-hand',
     images: [
       'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=600&h=600&fit=crop',
     ],
@@ -89,6 +92,7 @@ export const mockItems: Item[] = [
     description: 'Warm winter jacket from North Face. Size Medium. Only worn one season. No tears or stains.',
     price: 120,
     category: 'clothing',
+    condition: 'very-good',
     images: [
       'https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=600&h=600&fit=crop',
     ],
@@ -106,6 +110,7 @@ export const mockItems: Item[] = [
     description: 'Purple yoga mat (thick cushioning) with a set of 5 resistance bands. Used a few times. Perfect for home workouts.',
     price: 25,
     category: 'sports',
+    condition: 'brand-new',
     images: [
       'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=600&h=600&fit=crop',
     ],
@@ -123,6 +128,7 @@ export const mockItems: Item[] = [
     description: 'Bundle of 3 psychology and sociology textbooks. All in good condition. Small notes in margins.',
     price: 60,
     category: 'textbooks',
+    condition: 'second-hand',
     images: [
       'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&h=600&fit=crop',
     ],

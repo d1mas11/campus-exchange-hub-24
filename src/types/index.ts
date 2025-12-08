@@ -8,12 +8,21 @@ export interface User {
   createdAt: Date;
 }
 
+export type Condition = 'brand-new' | 'very-good' | 'second-hand';
+
+export const CONDITIONS: { value: Condition; label: string }[] = [
+  { value: 'brand-new', label: 'Brand New' },
+  { value: 'very-good', label: 'Very Good' },
+  { value: 'second-hand', label: 'Second Hand' },
+];
+
 export interface Item {
   id: string;
   title: string;
   description: string;
   price: number;
   category: Category;
+  condition: Condition;
   images: string[];
   sellerId: string;
   sellerName: string;
