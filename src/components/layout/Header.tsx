@@ -1,12 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, User, Plus, Menu, X, Home, Heart, Clock } from 'lucide-react';
+import { MessageCircle, User, Plus, Menu, X, Home, Heart, Clock, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { to: '/', label: 'Browse', icon: Home },
@@ -51,6 +53,19 @@ export function Header() {
               </Link>
             );
           })}
+          {user ? (
+            <Button variant="ghost" size="sm" className="gap-2" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+              <span>Sign Out</span>
+            </Button>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </Button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -94,6 +109,26 @@ export function Header() {
                 </Link>
               );
             })}
+            {user ? (
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-3" 
+                onClick={() => {
+                  signOut();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Sign Out</span>
+              </Button>
+            ) : (
+              <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start gap-3">
+                  <LogIn className="h-5 w-5" />
+                  <span>Sign In</span>
+                </Button>
+              </Link>
+            )}
           </nav>
         </div>
       )}
