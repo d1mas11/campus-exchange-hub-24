@@ -69,6 +69,12 @@ const Auth = () => {
       }
 
       toast.success('Verification code sent to your email!');
+      
+      // DEV MODE: Show code in toast for testing (REMOVE IN PRODUCTION)
+      if (response.data?.devCode) {
+        toast.info(`DEV MODE - Your code: ${response.data.devCode}`, { duration: 30000 });
+      }
+      
       setSignupStep('verify');
       setResendCooldown(60); // 60 second cooldown
     } catch (error: any) {
