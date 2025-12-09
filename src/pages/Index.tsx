@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { ItemCard } from '@/components/items/ItemCard';
 import { CategoryFilter } from '@/components/items/CategoryFilter';
@@ -7,6 +8,29 @@ import { mockItems } from '@/data/mockData';
 import { Category, Condition } from '@/types';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/hooks/useAuth';
+
+function PersonalizedGreeting() {
+  const { user, profile, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (!user) {
+    return (
+      <p className="text-lg text-muted-foreground mb-2">
+        <Link to="/auth" className="text-primary hover:underline">Sign in</Link> to personalize your experience
+      </p>
+    );
+  }
+
+  const displayName = profile?.first_name || user.email?.split('@')[0] || 'there';
+
+  return (
+    <p className="text-lg text-primary font-medium mb-2">
+      Hello {displayName}!
+    </p>
+  );
+}
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +67,7 @@ const Index = () => {
       <main className="container py-6">
         {/* Hero Search Section */}
         <section className="mb-8 animate-fade-in">
+          <PersonalizedGreeting />
           <h1 className="text-2xl font-bold text-foreground mb-4 md:text-3xl">
             What are you looking for?
           </h1>
