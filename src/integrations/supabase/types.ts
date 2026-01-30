@@ -41,25 +41,105 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      favourites: {
         Row: {
           created_at: string
-          first_name: string | null
           id: string
-          updated_at: string
+          listing_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          first_name?: string | null
           id?: string
-          updated_at?: string
+          listing_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favourites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          category: string
+          condition: string
+          created_at: string
+          description: string | null
+          id: string
+          images: string[] | null
+          price: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          condition: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          price: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          condition?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          price?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          university: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
           first_name?: string | null
           id?: string
+          university?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          university?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -5,23 +5,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { CATEGORIES, Category } from '@/types';
+import { CATEGORIES, Category, CONDITIONS, Condition } from '@/types';
 import { cn } from '@/lib/utils';
 import { ImagePlus, X, ArrowLeft, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useCreateListing } from '@/hooks/useListings';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CreateListing() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const createListing = useCreateListing();
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState<Category | null>(null);
+  const [condition, setCondition] = useState<Condition | null>(null);
   const [images, setImages] = useState<string[]>([]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && images.length < 5) {
-      // Simulate image upload with placeholder URLs
+      // For now, use placeholder URLs - in production, upload to storage
       const newImages = Array.from(files).slice(0, 5 - images.length).map(
         () => `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&h=600&fit=crop`
       );
@@ -33,10 +39,20 @@ export default function CreateListing() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !price || !category || images.length === 0) {
+    if (!user) {
+      toast({
+        title: 'Not logged in',
+        description: 'Please sign in to create a listing.',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (!title || !description || !price || !category || !condition || images.length === 0) {
       toast({
         title: 'Missing fields',
         description: 'Please fill in all required fields and add at least one image.',
@@ -45,12 +61,16 @@ export default function CreateListing() {
       return;
     }
 
-    // Simulate successful listing creation
-    toast({
-      title: 'Listing created!',
-      description: 'Your item has been posted to the marketplace.',
+    await createListing.mutateAsync({
+      title,
+      description,
+      price: parseFloat(price),
+      category,
+      condition,
+      images,
     });
-    navigate('/');
+
+    navigate('/profile');
   };
 
   return (
@@ -157,6 +177,31 @@ export default function CreateListing() {
               />
             </div>
 
+            {/* Condition */}
+            <div>
+              <Label className="mb-3 block">Condition</Label>
+              <div className="flex flex-wrap gap-2">
+                {CONDITIONS.map((cond) => (
+                  <button
+                    key={cond.value}
+                    type="button"
+                    onClick={() => setCondition(cond.value)}
+                    className={cn(
+                      'rounded-full px-4 py-2 text-sm font-medium transition-all',
+                      condition === cond.value
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    )}
+                  >
+                    {cond.label}
+                    {condition === cond.value && (
+                      <Check className="inline ml-2 h-3 w-3" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Category */}
             <div>
               <Label className="mb-3 block">Category</Label>
@@ -184,8 +229,14 @@ export default function CreateListing() {
             </div>
 
             {/* Submit */}
-            <Button type="submit" variant="hero" size="lg" className="w-full">
-              Post Listing
+            <Button 
+              type="submit" 
+              variant="hero" 
+              size="lg" 
+              className="w-full"
+              disabled={createListing.isPending}
+            >
+              {createListing.isPending ? 'Creating...' : 'Post Listing'}
             </Button>
           </form>
         </div>

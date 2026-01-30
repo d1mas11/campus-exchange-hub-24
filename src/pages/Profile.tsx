@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { ItemCard } from '@/components/items/ItemCard';
-import { currentUser, mockItems } from '@/data/mockData';
-import { LANGUAGES } from '@/types';
+import { LANGUAGES, CATEGORIES } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   Settings,
@@ -19,17 +17,66 @@ import {
   Check,
   X,
   Camera,
+  Trash2,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserListings, useDeleteListing, type Listing } from '@/hooks/useListings';
+import { supabase } from '@/integrations/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
+
+function ListingCard({ listing, onDelete }: { listing: Listing; onDelete: () => void }) {
+  const category = CATEGORIES.find((c) => c.value === listing.category);
+  
+  return (
+    <div className="group overflow-hidden rounded-xl bg-card shadow-card">
+      <div className="relative aspect-square overflow-hidden bg-muted">
+        <img
+          src={listing.images[0] || 'https://via.placeholder.com/300'}
+          alt={listing.title}
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium backdrop-blur">
+          {category?.icon} {category?.label}
+        </div>
+        <button
+          onClick={onDelete}
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-destructive text-destructive-foreground transition-all duration-200 hover:scale-110"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="p-4">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-foreground line-clamp-1">
+            {listing.title}
+          </h3>
+          <span className="shrink-0 font-bold text-primary">
+            ${listing.price}
+          </span>
+        </div>
+        <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
+          {listing.description}
+        </p>
+        <div className="text-xs text-muted-foreground">
+          {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Profile() {
+  const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
+  const { data: userListings = [], isLoading } = useUserListings();
+  const deleteListing = useDeleteListing();
+  
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(currentUser.name);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
-    currentUser.languages
-  );
-
-  const userListings = mockItems.filter((item) => item.sellerId === currentUser.id);
+  const [firstName, setFirstName] = useState(profile?.first_name || '');
+  const [bio, setBio] = useState('');
+  const [university, setUniversity] = useState('');
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
 
   const toggleLanguage = (lang: string) => {
     if (selectedLanguages.includes(lang)) {
@@ -41,7 +88,27 @@ export default function Profile() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!user?.id) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        first_name: firstName,
+        bio,
+        university,
+      })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     toast({
       title: 'Profile updated',
       description: 'Your changes have been saved successfully.',
@@ -49,12 +116,28 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const handleLogout = () => {
-    toast({
-      title: 'Logged out',
-      description: 'You have been logged out successfully.',
-    });
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
+
+  const handleDeleteListing = (listingId: string) => {
+    deleteListing.mutate(listingId);
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
+          <Link to="/auth">
+            <Button>Sign In</Button>
+          </Link>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,17 +150,9 @@ export default function Profile() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               {/* Avatar */}
               <div className="relative">
-                {currentUser.profilePicture ? (
-                  <img
-                    src={currentUser.profilePicture}
-                    alt={currentUser.name}
-                    className="h-24 w-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground">
-                    {currentUser.name.charAt(0)}
-                  </div>
-                )}
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground">
+                  {(profile?.first_name || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
                 {isEditing && (
                   <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Camera className="h-4 w-4" />
@@ -90,34 +165,59 @@ export default function Profile() {
                 {isEditing ? (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="name">Name</Label>
+                      <Label htmlFor="firstName">First Name</Label>
                       <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        id="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
                         className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="university">University</Label>
+                      <Input
+                        id="university"
+                        value={university}
+                        onChange={(e) => setUniversity(e.target.value)}
+                        placeholder="Your university"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        placeholder="Tell others about yourself..."
+                        className="mt-1 resize-none"
+                        rows={3}
                       />
                     </div>
                   </div>
                 ) : (
                   <>
                     <h1 className="text-2xl font-bold text-foreground mb-2">
-                      {currentUser.name}
+                      {profile?.first_name || 'Student'}
                     </h1>
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Mail className="h-4 w-4" />
-                        <span>{currentUser.email}</span>
+                        <span>{user.email}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>{currentUser.university}</span>
+                      {university && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          <span>{university}</span>
+                        </div>
+                      )}
+                    </div>
+                    {selectedLanguages.length > 0 && (
+                      <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
+                        <Languages className="h-4 w-4" />
+                        <span>Speaks: {selectedLanguages.join(', ')}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-                      <Languages className="h-4 w-4" />
-                      <span>Speaks: {currentUser.languages.join(', ')}</span>
-                    </div>
+                    )}
                   </>
                 )}
               </div>
@@ -193,10 +293,18 @@ export default function Profile() {
             </Link>
           </div>
 
-          {userListings.length > 0 ? (
+          {isLoading ? (
+            <div className="py-12 text-center text-muted-foreground">
+              Loading your listings...
+            </div>
+          ) : userListings.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {userListings.map((item) => (
-                <ItemCard key={item.id} item={item} />
+              {userListings.map((listing) => (
+                <ListingCard 
+                  key={listing.id} 
+                  listing={listing} 
+                  onDelete={() => handleDeleteListing(listing.id)}
+                />
               ))}
             </div>
           ) : (
