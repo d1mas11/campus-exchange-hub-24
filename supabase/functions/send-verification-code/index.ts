@@ -8,6 +8,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Blocklist of disposable email domains
+const DISPOSABLE_DOMAINS = [
+  "tempmail.com", "throwaway.email", "guerrillamail.com", "mailinator.com",
+  "10minutemail.com", "temp-mail.org", "fakeinbox.com", "trashmail.com",
+  "getnada.com", "maildrop.cc", "dispostable.com", "yopmail.com",
+  "sharklasers.com", "guerrillamailblock.com", "pokemail.net", "spam4.me",
+  "grr.la", "guerrillamail.info", "guerrillamail.biz", "guerrillamail.de",
+  "guerrillamail.net", "guerrillamail.org", "emailondeck.com", "tempail.com",
+  "tempr.email", "discard.email", "mailnesia.com", "spamgourmet.com",
+  "mytrashmail.com", "mt2009.com", "thankyou2010.com", "trash2009.com",
+  "mt2014.com", "tempinbox.com", "tempmailaddress.com", "tempmails.net"
+];
+
 interface SendCodeRequest {
   email: string;
 }
@@ -20,11 +33,24 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { email }: SendCodeRequest = await req.json();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Extract domain from email
+    const domain = normalizedEmail.split("@")[1];
+
+    // Check for disposable email domains
+    if (DISPOSABLE_DOMAINS.includes(domain)) {
+      console.error("Disposable email domain blocked:", domain);
+      return new Response(
+        JSON.stringify({ error: "Disposable email addresses are not allowed. Please use your student email." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Validate email format: 6 digits + @student.pwr.wroc.pl
     const emailRegex = /^\d{6}@student\.pwr\.wroc\.pl$/;
-    if (!emailRegex.test(email)) {
-      console.error("Invalid email format:", email);
+    if (!emailRegex.test(normalizedEmail)) {
+      console.error("Invalid email format:", normalizedEmail);
       return new Response(
         JSON.stringify({ error: "Email must be in format: 123456@student.pwr.wroc.pl" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -35,23 +61,35 @@ const handler = async (req: Request): Promise<Response> => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
-    console.log("Generated verification code for:", email);
+    console.log("Generated verification code for:", normalizedEmail);
 
     // Store in database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if user already exists with this email
+    const { data: existingUser } = await supabase.auth.admin.listUsers();
+    const userExists = existingUser?.users?.some(u => u.email?.toLowerCase() === normalizedEmail);
+    
+    if (userExists) {
+      console.log("User already registered:", normalizedEmail);
+      return new Response(
+        JSON.stringify({ error: "An account with this email already exists. Please log in instead." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Invalidate any previous codes for this email
     await supabase
       .from("email_verifications")
       .delete()
-      .eq("email", email)
+      .eq("email", normalizedEmail)
       .eq("verified", false);
 
     // Insert new code
     const { error: dbError } = await supabase.from("email_verifications").insert({
-      email,
+      email: normalizedEmail,
       code,
       expires_at: expiresAt.toISOString(),
     });
@@ -73,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Verification <onboarding@resend.dev>",
-        to: [email],
+        to: [normalizedEmail],
         subject: "Your Verification Code",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

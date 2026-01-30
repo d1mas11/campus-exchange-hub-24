@@ -19,18 +19,35 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { email, code }: VerifyCodeRequest = await req.json();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    console.log("Verifying code for:", email);
+    console.log("Verifying code for:", normalizedEmail);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if already verified (prevent reuse)
+    const { data: alreadyVerified } = await supabase
+      .from("email_verifications")
+      .select("*")
+      .eq("email", normalizedEmail)
+      .eq("verified", true)
+      .maybeSingle();
+
+    if (alreadyVerified) {
+      console.log("Email already verified:", normalizedEmail);
+      return new Response(
+        JSON.stringify({ valid: true, message: "Email already verified", alreadyVerified: true }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Find the verification record
     const { data: verification, error: fetchError } = await supabase
       .from("email_verifications")
       .select("*")
-      .eq("email", email)
+      .eq("email", normalizedEmail)
       .eq("code", code)
       .eq("verified", false)
       .maybeSingle();
@@ -44,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!verification) {
-      console.log("Invalid code for:", email);
+      console.log("Invalid code for:", normalizedEmail);
       return new Response(
         JSON.stringify({ error: "Invalid verification code", valid: false }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -54,9 +71,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Check if expired
     const expiresAt = new Date(verification.expires_at);
     if (expiresAt < new Date()) {
-      console.log("Code expired for:", email);
+      console.log("Code expired for:", normalizedEmail);
+      // Delete expired code
+      await supabase
+        .from("email_verifications")
+        .delete()
+        .eq("id", verification.id);
+        
       return new Response(
-        JSON.stringify({ error: "Verification code has expired", valid: false }),
+        JSON.stringify({ error: "Verification code has expired. Please request a new one.", valid: false, expired: true }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -75,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Code verified successfully for:", email);
+    console.log("Code verified successfully for:", normalizedEmail);
 
     return new Response(
       JSON.stringify({ valid: true, message: "Code verified successfully" }),
