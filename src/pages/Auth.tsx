@@ -10,10 +10,10 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-// University email format: 6 digits + @student.pwr.wroc.pl
+// University email format: 6 digits + @student.ue.wroc.pl
 const universityEmailSchema = z.string().trim().regex(
-  /^\d{6}@student\.pwr\.wroc\.pl$/,
-  { message: "Email must be in format: 123456@student.pwr.wroc.pl" }
+  /^\d{6}@student\.ue\.wroc\.pl$/,
+  { message: "Email must be in format: 123456@student.ue.wroc.pl" }
 );
 const emailSchema = z.string().trim().email({ message: "Invalid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
@@ -237,7 +237,7 @@ const Auth = () => {
           <Input
             id="email"
             type="email"
-            placeholder="123456@student.pwr.wroc.pl"
+            placeholder="123456@student.ue.wroc.pl"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
