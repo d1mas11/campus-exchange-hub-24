@@ -1,7 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { mockItems } from '@/data/mockData';
 import { CATEGORIES } from '@/types';
 import {
@@ -18,15 +20,89 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useToggleFavourite, useFavouriteIds } from '@/hooks/useFavourites';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 export default function ItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { data: favouriteIds = new Set() } = useFavouriteIds();
+  const toggleFavourite = useToggleFavourite();
 
-  const item = mockItems.find((i) => i.id === id);
+  // Try to fetch from database first
+  const { data: dbItem, isLoading } = useQuery({
+    queryKey: ['listing', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('listings')
+        .select(`
+          *,
+          profiles:user_id (
+            first_name,
+            avatar_url,
+            university
+          )
+        `)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Fall back to mock items if not found in DB
+  const mockItem = mockItems.find((i) => i.id === id);
+  
+  // Determine which item to show
+  const item = dbItem ? {
+    id: dbItem.id,
+    title: dbItem.title,
+    description: dbItem.description || '',
+    price: Number(dbItem.price),
+    category: dbItem.category,
+    condition: dbItem.condition,
+    images: dbItem.images || [],
+    sellerId: dbItem.user_id,
+    sellerName: (dbItem.profiles as any)?.first_name || 'Anonymous',
+    sellerUniversity: (dbItem.profiles as any)?.university || 'Unknown University',
+    sellerLanguages: ['English'],
+    sellerAvatar: (dbItem.profiles as any)?.avatar_url,
+    createdAt: new Date(dbItem.created_at),
+  } : mockItem;
+
   const category = CATEGORIES.find((c) => c.value === item?.category);
+  const isFavourite = id ? favouriteIds.has(id) : false;
+
+  const handleToggleFavourite = () => {
+    if (!user) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to add items to your favourites.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (id && dbItem) {
+      toggleFavourite.mutate({ listingId: id, isFavourite });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container py-16 text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!item) {
     return (
@@ -73,7 +149,7 @@ export default function ItemDetail() {
           <div className="animate-fade-in">
             <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
               <img
-                src={item.images[currentImageIndex]}
+                src={item.images[currentImageIndex] || 'https://via.placeholder.com/600'}
                 alt={item.title}
                 className="h-full w-full object-cover"
               />
@@ -210,10 +286,11 @@ export default function ItemDetail() {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => setIsFavorite(!isFavorite)}
-                className={cn(isFavorite && 'text-destructive border-destructive')}
+                onClick={handleToggleFavourite}
+                className={cn(isFavourite && 'text-destructive border-destructive')}
+                disabled={!dbItem}
               >
-                <Heart className={cn('h-5 w-5', isFavorite && 'fill-current')} />
+                <Heart className={cn('h-5 w-5', isFavourite && 'fill-current')} />
               </Button>
               <Button variant="outline" size="lg">
                 <Share2 className="h-5 w-5" />

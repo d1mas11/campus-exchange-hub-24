@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { ItemCard } from '@/components/items/ItemCard';
 import { CategoryFilter } from '@/components/items/CategoryFilter';
 import { FilterPanel } from '@/components/items/FilterPanel';
+import { useListings } from '@/hooks/useListings';
 import { mockItems } from '@/data/mockData';
 import { Category, Condition } from '@/types';
 import { Search } from 'lucide-react';
@@ -37,11 +38,37 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedConditions, setSelectedConditions] = useState<Condition[]>([]);
   
-  const maxPrice = useMemo(() => Math.max(...mockItems.map((item) => item.price)), []);
+  const { data: dbListings = [], isLoading } = useListings();
+  
+  // Combine DB listings with mock items for display
+  const allItems = useMemo(() => {
+    // Transform DB listings to match the Item interface
+    const transformedDbListings = dbListings.map(listing => ({
+      id: listing.id,
+      title: listing.title,
+      description: listing.description || '',
+      price: Number(listing.price),
+      category: listing.category as Category,
+      condition: listing.condition as Condition,
+      images: listing.images,
+      sellerId: listing.user_id,
+      sellerName: listing.seller_name || 'Anonymous',
+      sellerUniversity: listing.seller_university || 'Unknown',
+      sellerLanguages: ['English'],
+      sellerAvatar: listing.seller_avatar,
+      createdAt: new Date(listing.created_at),
+      isFavorite: false,
+    }));
+    
+    // Return DB listings first, then mock items
+    return [...transformedDbListings, ...mockItems];
+  }, [dbListings]);
+  
+  const maxPrice = useMemo(() => Math.max(...allItems.map((item) => item.price), 1000), [allItems]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPrice]);
 
   const filteredItems = useMemo(() => {
-    return mockItems.filter((item) => {
+    return allItems.filter((item) => {
       const matchesSearch =
         searchQuery === '' ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -58,7 +85,27 @@ const Index = () => {
 
       return matchesSearch && matchesCategory && matchesCondition && matchesPrice;
     });
-  }, [searchQuery, selectedCategory, selectedConditions, priceRange]);
+  }, [searchQuery, selectedCategory, selectedConditions, priceRange, allItems]);
+
+  // Transform items to Listing format for ItemCard
+  const listingsForCards = useMemo(() => {
+    return filteredItems.map(item => ({
+      id: item.id,
+      user_id: item.sellerId,
+      title: item.title,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      condition: item.condition,
+      images: item.images,
+      status: 'active',
+      created_at: item.createdAt.toISOString(),
+      updated_at: item.createdAt.toISOString(),
+      seller_name: item.sellerName,
+      seller_avatar: item.sellerAvatar,
+      seller_university: item.sellerUniversity,
+    }));
+  }, [filteredItems]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,15 +158,19 @@ const Index = () => {
         </div>
 
         {/* Items Grid */}
-        {filteredItems.length > 0 ? (
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <p className="text-muted-foreground">Loading listings...</p>
+          </div>
+        ) : listingsForCards.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredItems.map((item, index) => (
+            {listingsForCards.map((listing, index) => (
               <div
-                key={item.id}
+                key={listing.id}
                 className="animate-fade-in"
                 style={{ animationDelay: `${0.05 * index}s` }}
               >
-                <ItemCard item={item} />
+                <ItemCard listing={listing} />
               </div>
             ))}
           </div>
