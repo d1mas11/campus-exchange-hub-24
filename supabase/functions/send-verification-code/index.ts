@@ -47,12 +47,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate email format: 6 digits + @student.pwr.wroc.pl
-    const emailRegex = /^\d{6}@student\.pwr\.wroc\.pl$/;
+    // Validate email format: 6 digits + @student.ue.wroc.pl
+    const emailRegex = /^\d{6}@student\.ue\.wroc\.pl$/;
     if (!emailRegex.test(normalizedEmail)) {
       console.error("Invalid email format:", normalizedEmail);
       return new Response(
-        JSON.stringify({ error: "Email must be in format: 123456@student.pwr.wroc.pl" }),
+        JSON.stringify({ error: "Email must be in format: 123456@student.ue.wroc.pl" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
