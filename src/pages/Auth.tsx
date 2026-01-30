@@ -137,6 +137,17 @@ const Auth = () => {
 
     setLoading(true);
     try {
+      // Verify that email was actually verified before allowing signup
+      const verifyResponse = await supabase.functions.invoke('check-verification', {
+        body: { email: email.trim() },
+      });
+
+      if (verifyResponse.error || !verifyResponse.data?.verified) {
+        toast.error('Please verify your email first before creating an account.');
+        setSignupStep('email');
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
