@@ -1,18 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { mockChats, mockMessages, currentUser } from '@/data/mockData';
+import { mockChats, mockMessages, mockUsers, mockItems, currentUser } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { Send, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Chat } from '@/types';
 
 export default function Messages() {
+  const [searchParams] = useSearchParams();
+  const sellerIdParam = searchParams.get('sellerId');
+  const itemIdParam = searchParams.get('itemId');
+  
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState(mockMessages);
+  const [chats, setChats] = useState<Chat[]>(mockChats);
 
-  const selectedChat = mockChats.find((c) => c.id === selectedChatId);
+  // Handle creating a new chat when coming from a product page
+  useEffect(() => {
+    if (sellerIdParam) {
+      // Check if chat with this seller already exists
+      const existingChat = chats.find(chat => 
+        chat.participantIds.includes(sellerIdParam) && 
+        chat.participantIds.includes(currentUser.id) &&
+        (itemIdParam ? chat.itemId === itemIdParam : true)
+      );
+
+      if (existingChat) {
+        setSelectedChatId(existingChat.id);
+      } else {
+        // Create a new chat with this seller
+        const seller = mockUsers.find(u => u.id === sellerIdParam);
+        const item = itemIdParam ? mockItems.find(i => i.id === itemIdParam) : undefined;
+        
+        if (seller) {
+          const newChat: Chat = {
+            id: `new-${Date.now()}`,
+            participantIds: [currentUser.id, sellerIdParam],
+            participants: [currentUser, seller],
+            itemId: itemIdParam || undefined,
+            item: item,
+            lastMessage: undefined,
+          };
+          
+          setChats(prev => [newChat, ...prev]);
+          setSelectedChatId(newChat.id);
+        }
+      }
+    }
+  }, [sellerIdParam, itemIdParam]);
+
+  const selectedChat = chats.find((c) => c.id === selectedChatId);
   const otherParticipant = selectedChat?.participants.find(
     (p) => p.id !== currentUser.id
   );
@@ -55,15 +96,15 @@ export default function Messages() {
               selectedChatId && 'hidden lg:block'
             )}
           >
-            {mockChats.length === 0 ? (
-              <div className="flex h-full items-center justify-center p-6 text-center">
-                <p className="text-muted-foreground">
-                  No conversations yet. Start chatting with sellers!
-                </p>
-              </div>
+          {chats.length === 0 ? (
+            <div className="flex h-full items-center justify-center p-6 text-center">
+              <p className="text-muted-foreground">
+                No conversations yet. Start chatting with sellers!
+              </p>
+            </div>
             ) : (
               <div className="divide-y divide-border">
-                {mockChats.map((chat) => {
+                {chats.map((chat) => {
                   const other = chat.participants.find(
                     (p) => p.id !== currentUser.id
                   );

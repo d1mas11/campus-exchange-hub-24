@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import ItemDetail from "./pages/ItemDetail";
+import Purchase from "./pages/Purchase";
 import CreateListing from "./pages/CreateListing";
 import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
@@ -27,6 +28,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/item/:id" element={<ItemDetail />} />
+            <Route path="/purchase/:id" element={<Purchase />} />
             <Route path="/create" element={<CreateListing />} />
             <Route path="/favourites" element={<Favourites />} />
             <Route path="/pending" element={<Pending />} />
