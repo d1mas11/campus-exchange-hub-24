@@ -16,6 +16,7 @@ import {
   Share2,
   ChevronLeft,
   ChevronRight,
+  ShoppingBag,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
@@ -287,25 +288,37 @@ export default function ItemDetail() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Link to={`/messages?item=${item.id}`} className="flex-1">
-                <Button variant="hero" size="lg" className="w-full">
-                  <MessageCircle className="h-5 w-5" />
-                  Message Seller
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <Link to={`/messages?sellerId=${item.sellerId}&itemId=${item.id}`} className="flex-1">
+                  <Button variant="outline" size="lg" className="w-full">
+                    <MessageCircle className="h-5 w-5" />
+                    Message Seller
+                  </Button>
+                </Link>
+                <Link to={`/purchase/${item.id}`} className="flex-1">
+                  <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <ShoppingBag className="h-5 w-5" />
+                    Purchase
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleToggleFavourite}
+                  className={cn('flex-1', isFavourite && 'text-destructive border-destructive')}
+                  disabled={!dbItem}
+                >
+                  <Heart className={cn('h-5 w-5', isFavourite && 'fill-current')} />
+                  {isFavourite ? 'Saved' : 'Save'}
                 </Button>
-              </Link>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleToggleFavourite}
-                className={cn(isFavourite && 'text-destructive border-destructive')}
-                disabled={!dbItem}
-              >
-                <Heart className={cn('h-5 w-5', isFavourite && 'fill-current')} />
-              </Button>
-              <Button variant="outline" size="lg">
-                <Share2 className="h-5 w-5" />
-              </Button>
+                <Button variant="outline" size="lg" className="flex-1">
+                  <Share2 className="h-5 w-5" />
+                  Share
+                </Button>
+              </div>
             </div>
           </div>
         </div>
