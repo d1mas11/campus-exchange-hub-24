@@ -3,55 +3,115 @@ import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { mockChats, mockMessages, mockUsers, mockItems, currentUser } from '@/data/mockData';
+import { mockChats, mockMessages } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { Send, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { Chat } from '@/types';
+import { Chat, User, Item, Category, Condition } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Messages() {
   const [searchParams] = useSearchParams();
   const sellerIdParam = searchParams.get('sellerId');
   const itemIdParam = searchParams.get('itemId');
+  const { user } = useAuth();
   
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState(mockMessages);
   const [chats, setChats] = useState<Chat[]>(mockChats);
 
+  // Create current user object from auth
+  const currentUser: User = {
+    id: user?.id || '',
+    email: user?.email || '',
+    name: user?.user_metadata?.first_name || 'You',
+    university: '',
+    languages: [],
+    createdAt: new Date(),
+  };
+
   // Handle creating a new chat when coming from a product page
   useEffect(() => {
-    if (sellerIdParam) {
+    const fetchSellerAndCreateChat = async () => {
+      if (!sellerIdParam || !user) return;
+
       // Check if chat with this seller already exists
       const existingChat = chats.find(chat => 
         chat.participantIds.includes(sellerIdParam) && 
-        chat.participantIds.includes(currentUser.id) &&
+        chat.participantIds.includes(user.id) &&
         (itemIdParam ? chat.itemId === itemIdParam : true)
       );
 
       if (existingChat) {
         setSelectedChatId(existingChat.id);
-      } else {
-        // Create a new chat with this seller
-        const seller = mockUsers.find(u => u.id === sellerIdParam);
-        const item = itemIdParam ? mockItems.find(i => i.id === itemIdParam) : undefined;
+        return;
+      }
+
+      // Fetch seller profile from database
+      const { data: sellerProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', sellerIdParam)
+        .single();
+
+      // Fetch item from database if itemIdParam exists
+      let itemData: Item | undefined;
+      if (itemIdParam) {
+        const { data: listing } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('id', itemIdParam)
+          .single();
         
-        if (seller) {
-          const newChat: Chat = {
-            id: `new-${Date.now()}`,
-            participantIds: [currentUser.id, sellerIdParam],
-            participants: [currentUser, seller],
-            itemId: itemIdParam || undefined,
-            item: item,
-            lastMessage: undefined,
+        if (listing) {
+          itemData = {
+            id: listing.id,
+            title: listing.title,
+            description: listing.description || '',
+            price: Number(listing.price),
+            category: listing.category as Category,
+            condition: listing.condition as Condition,
+            images: listing.images || [],
+            sellerId: listing.user_id,
+            sellerName: sellerProfile?.first_name || 'Seller',
+            sellerUniversity: sellerProfile?.university || '',
+            sellerLanguages: [],
+            sellerAvatar: sellerProfile?.avatar_url || undefined,
+            createdAt: new Date(listing.created_at),
+            isFavorite: false,
           };
-          
-          setChats(prev => [newChat, ...prev]);
-          setSelectedChatId(newChat.id);
         }
       }
-    }
-  }, [sellerIdParam, itemIdParam]);
+
+      if (sellerProfile) {
+        const seller: User = {
+          id: sellerProfile.user_id,
+          email: '',
+          name: sellerProfile.first_name || 'Seller',
+          university: sellerProfile.university || '',
+          profilePicture: sellerProfile.avatar_url || undefined,
+          languages: [],
+          createdAt: new Date(sellerProfile.created_at),
+        };
+
+        const newChat: Chat = {
+          id: `new-${Date.now()}`,
+          participantIds: [user.id, sellerIdParam],
+          participants: [currentUser, seller],
+          itemId: itemIdParam || undefined,
+          item: itemData,
+          lastMessage: undefined,
+        };
+        
+        setChats(prev => [newChat, ...prev]);
+        setSelectedChatId(newChat.id);
+      }
+    };
+
+    fetchSellerAndCreateChat();
+  }, [sellerIdParam, itemIdParam, user]);
 
   const selectedChat = chats.find((c) => c.id === selectedChatId);
   const otherParticipant = selectedChat?.participants.find(
