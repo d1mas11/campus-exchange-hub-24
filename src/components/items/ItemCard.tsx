@@ -21,6 +21,9 @@ export function ItemCard({ listing, className }: ItemCardProps) {
   const isFavourite = favouriteIds.has(listing.id);
   const category = CATEGORIES.find((c) => c.value === listing.category);
 
+  // Check if listing ID is a valid UUID (real DB item vs mock item)
+  const isRealListing = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(listing.id);
+
   const handleToggleFavourite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -30,6 +33,14 @@ export function ItemCard({ listing, className }: ItemCardProps) {
         title: 'Sign in required',
         description: 'Please sign in to add items to your favourites.',
         variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!isRealListing) {
+      toast({
+        title: 'Demo item',
+        description: 'This is a demo item and cannot be added to favourites.',
       });
       return;
     }

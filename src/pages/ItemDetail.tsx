@@ -77,6 +77,9 @@ export default function ItemDetail() {
 
   const category = CATEGORIES.find((c) => c.value === item?.category);
   const isFavourite = id ? favouriteIds.has(id) : false;
+  
+  // Check if listing ID is a valid UUID (real DB item vs mock item)
+  const isRealListing = id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) : false;
 
   const handleToggleFavourite = () => {
     if (!user) {
@@ -84,6 +87,14 @@ export default function ItemDetail() {
         title: 'Sign in required',
         description: 'Please sign in to add items to your favourites.',
         variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!isRealListing) {
+      toast({
+        title: 'Demo item',
+        description: 'This is a demo item and cannot be added to favourites.',
       });
       return;
     }
