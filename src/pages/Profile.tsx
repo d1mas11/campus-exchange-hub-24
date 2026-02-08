@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -16,14 +16,15 @@ import {
   Plus,
   Check,
   X,
-  Camera,
   Trash2,
+  CreditCard,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserListings, useDeleteListing, type Listing } from '@/hooks/useListings';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { AvatarUpload } from '@/components/profile/AvatarUpload';
 
 function ListingCard({ listing, onDelete }: { listing: Listing; onDelete: () => void }) {
   const category = CATEGORIES.find((c) => c.value === listing.category);
@@ -68,15 +69,28 @@ function ListingCard({ listing, onDelete }: { listing: Listing; onDelete: () => 
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const { data: userListings = [], isLoading } = useUserListings();
   const deleteListing = useDeleteListing();
   
   const [isEditing, setIsEditing] = useState(false);
-  const [firstName, setFirstName] = useState(profile?.first_name || '');
+  const [firstName, setFirstName] = useState('');
   const [bio, setBio] = useState('');
   const [university, setUniversity] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Sync state from profile
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name || '');
+      setBio(profile.bio || '');
+      setUniversity(profile.university || '');
+      setAccountNumber(profile.account_number || '');
+      setAvatarUrl(profile.avatar_url || null);
+    }
+  }, [profile]);
 
   const toggleLanguage = (lang: string) => {
     if (selectedLanguages.includes(lang)) {
@@ -97,6 +111,7 @@ export default function Profile() {
         first_name: firstName,
         bio,
         university,
+        account_number: accountNumber || null,
       })
       .eq('user_id', user.id);
 
@@ -114,6 +129,7 @@ export default function Profile() {
       description: 'Your changes have been saved successfully.',
     });
     setIsEditing(false);
+    refreshProfile();
   };
 
   const handleLogout = async () => {
@@ -123,6 +139,11 @@ export default function Profile() {
 
   const handleDeleteListing = (listingId: string) => {
     deleteListing.mutate(listingId);
+  };
+
+  const handleAvatarChange = (url: string) => {
+    setAvatarUrl(url);
+    refreshProfile();
   };
 
   if (!user) {
@@ -149,16 +170,13 @@ export default function Profile() {
           <div className="rounded-2xl border border-border bg-card p-6 mb-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               {/* Avatar */}
-              <div className="relative">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground">
-                  {(profile?.first_name || user.email || 'U').charAt(0).toUpperCase()}
-                </div>
-                {isEditing && (
-                  <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Camera className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              <AvatarUpload
+                userId={user.id}
+                avatarUrl={avatarUrl}
+                displayName={profile?.first_name || user.email || 'U'}
+                isEditing={isEditing}
+                onAvatarChange={handleAvatarChange}
+              />
 
               {/* Info */}
               <div className="flex-1">
@@ -194,6 +212,22 @@ export default function Profile() {
                         rows={3}
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="accountNumber" className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Bank Account / IBAN
+                      </Label>
+                      <Input
+                        id="accountNumber"
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        placeholder="e.g. PL61 1090 1014 0000 0712 1981 2874"
+                        className="mt-1"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Buyers will see this after purchase to transfer payment
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -205,10 +239,10 @@ export default function Profile() {
                         <Mail className="h-4 w-4" />
                         <span>{user.email}</span>
                       </div>
-                      {university && (
+                      {(profile?.university || university) && (
                         <div className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
-                          <span>{university}</span>
+                          <span>{profile?.university || university}</span>
                         </div>
                       )}
                     </div>
@@ -216,6 +250,12 @@ export default function Profile() {
                       <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
                         <Languages className="h-4 w-4" />
                         <span>Speaks: {selectedLanguages.join(', ')}</span>
+                      </div>
+                    )}
+                    {(profile?.account_number || accountNumber) && (
+                      <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
+                        <CreditCard className="h-4 w-4" />
+                        <span>Bank account added ✓</span>
                       </div>
                     )}
                   </>
