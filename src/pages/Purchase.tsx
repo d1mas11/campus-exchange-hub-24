@@ -4,16 +4,25 @@ import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { mockItems } from '@/data/mockData';
-import { ArrowLeft, ShoppingBag, MessageCircle, CheckCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  ShoppingBag,
+  MessageCircle,
+  CheckCircle,
+  Shield,
+  CreditCard,
+  Package,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCreateOrder } from '@/hooks/useOrders';
 import { toast } from '@/hooks/use-toast';
 
 export default function Purchase() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const createOrder = useCreateOrder();
 
-  // Try to fetch from database first
   const { data: dbItem, isLoading } = useQuery({
     queryKey: ['listing', id],
     queryFn: async () => {
@@ -25,7 +34,8 @@ export default function Purchase() {
             first_name,
             avatar_url,
             university,
-            user_id
+            user_id,
+            account_number
           )
         `)
         .eq('id', id)
@@ -37,10 +47,8 @@ export default function Purchase() {
     enabled: !!id,
   });
 
-  // Fall back to mock items if not found in DB
   const mockItem = mockItems.find((i) => i.id === id);
   
-  // Determine which item to show
   const item = dbItem ? {
     id: dbItem.id,
     title: dbItem.title,
@@ -53,6 +61,7 @@ export default function Purchase() {
     sellerName: (dbItem.profiles as any)?.first_name || 'Anonymous',
     sellerUniversity: (dbItem.profiles as any)?.university || 'Unknown University',
     sellerAvatar: (dbItem.profiles as any)?.avatar_url,
+    sellerAccountNumber: (dbItem.profiles as any)?.account_number,
   } : mockItem;
 
   const handleConfirmPurchase = () => {
@@ -66,13 +75,36 @@ export default function Purchase() {
       return;
     }
 
-    toast({
-      title: 'Purchase Request Sent!',
-      description: 'The seller has been notified. They will contact you shortly.',
-    });
-    
-    // Navigate to messages with seller
-    navigate(`/messages?sellerId=${item?.sellerId}&itemId=${item?.id}`);
+    if (!dbItem) {
+      toast({
+        title: 'Demo item',
+        description: 'This is a demo item and cannot be purchased.',
+      });
+      return;
+    }
+
+    if (user.id === item?.sellerId) {
+      toast({
+        title: 'Cannot purchase',
+        description: "You can't buy your own listing.",
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    createOrder.mutate(
+      {
+        listingId: dbItem.id,
+        sellerId: dbItem.user_id,
+        amount: Number(dbItem.price),
+        buyerId: user.id,
+      },
+      {
+        onSuccess: () => {
+          navigate('/pending');
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -105,7 +137,6 @@ export default function Purchase() {
       <Header />
 
       <main className="container py-6 max-w-2xl mx-auto">
-        {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
@@ -162,34 +193,51 @@ export default function Purchase() {
                 <p className="text-sm text-muted-foreground">{item.sellerUniversity}</p>
               </div>
             </div>
+            {'sellerAccountNumber' in item && item.sellerAccountNumber && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground p-2 rounded-lg bg-muted/50">
+                <CreditCard className="h-4 w-4" />
+                <span>Seller has payment info set up ✓</span>
+              </div>
+            )}
           </div>
 
-          {/* How it works */}
-          <div className="p-4 rounded-xl bg-accent/50 mb-6">
-            <h3 className="font-semibold text-foreground mb-3">How it works</h3>
+          {/* How it works - Escrow */}
+          <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="h-5 w-5 text-accent" />
+              <h3 className="font-semibold text-foreground">Buyer Protection</h3>
+            </div>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
                   1
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Click "Confirm Purchase" to notify the seller
+                  You place the order — the seller is notified
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
                   2
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Chat with the seller to arrange pickup/payment
+                  Transfer the payment to the seller's account (shown after order)
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
                   3
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Meet up and complete the transaction safely
+                  <strong>Money is held</strong> until you confirm you received the item
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
+                  4
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Click "Received" in Pending — payment is released to the seller
                 </p>
               </div>
             </div>
@@ -210,8 +258,13 @@ export default function Purchase() {
               size="lg"
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
               onClick={handleConfirmPurchase}
+              disabled={createOrder.isPending}
             >
-              <CheckCircle className="h-5 w-5 mr-2" />
+              {createOrder.isPending ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+              ) : (
+                <CheckCircle className="h-5 w-5 mr-2" />
+              )}
               Confirm Purchase
             </Button>
           </div>
