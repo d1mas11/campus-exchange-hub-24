@@ -11,11 +11,13 @@ import { ImagePlus, X, ArrowLeft, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCreateListing } from '@/hooks/useListings';
 import { useAuth } from '@/hooks/useAuth';
+import { useListingImageUpload } from '@/hooks/useListingImageUpload';
 
 export default function CreateListing() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const createListing = useCreateListing();
+  const { uploadImages, uploading: uploadingImages } = useListingImageUpload();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -24,14 +26,16 @@ export default function CreateListing() {
   const [condition, setCondition] = useState<Condition | null>(null);
   const [images, setImages] = useState<string[]>([]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && images.length < 5) {
-      // For now, use placeholder URLs - in production, upload to storage
-      const newImages = Array.from(files).slice(0, 5 - images.length).map(
-        () => `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&h=600&fit=crop`
-      );
-      setImages([...images, ...newImages]);
+    if (!files || !user) return;
+    
+    const filesToUpload = Array.from(files).slice(0, 5 - images.length);
+    if (filesToUpload.length === 0) return;
+
+    const uploadedUrls = await uploadImages(user.id, filesToUpload);
+    if (uploadedUrls.length > 0) {
+      setImages(prev => [...prev, ...uploadedUrls]);
     }
   };
 
@@ -234,9 +238,9 @@ export default function CreateListing() {
               variant="hero" 
               size="lg" 
               className="w-full"
-              disabled={createListing.isPending}
+              disabled={createListing.isPending || uploadingImages}
             >
-              {createListing.isPending ? 'Creating...' : 'Post Listing'}
+              {uploadingImages ? 'Uploading images...' : createListing.isPending ? 'Creating...' : 'Post Listing'}
             </Button>
           </form>
         </div>
