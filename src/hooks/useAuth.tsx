@@ -10,6 +10,7 @@ interface Profile {
   bio: string | null;
   university: string | null;
   account_number: string | null;
+  languages: string[] | null;
 }
 
 interface AuthContextType {
