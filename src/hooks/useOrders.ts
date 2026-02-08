@@ -95,6 +95,60 @@ export function useCreateOrder() {
         .single();
 
       if (error) throw error;
+
+      // Send automatic message in the conversation between buyer and seller
+      try {
+        // Find or create conversation
+        const p1 = buyerId < sellerId ? buyerId : sellerId;
+        const p2 = buyerId < sellerId ? sellerId : buyerId;
+
+        let conversationId: string | null = null;
+
+        // Try to find existing conversation for this listing
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('participant_1', p1)
+          .eq('participant_2', p2)
+          .eq('listing_id', listingId)
+          .maybeSingle();
+
+        if (existingConv) {
+          conversationId = existingConv.id;
+        } else {
+          // Create new conversation
+          const { data: newConv } = await supabase
+            .from('conversations')
+            .insert({
+              participant_1: p1,
+              participant_2: p2,
+              listing_id: listingId,
+            })
+            .select('id')
+            .single();
+          conversationId = newConv?.id || null;
+        }
+
+        // Send system-like message from buyer
+        if (conversationId) {
+          // Fetch listing title for the message
+          const { data: listing } = await supabase
+            .from('listings')
+            .select('title')
+            .eq('id', listingId)
+            .single();
+
+          await supabase.from('messages').insert({
+            conversation_id: conversationId,
+            sender_id: buyerId,
+            content: `💰 I just placed an order for "${listing?.title || 'this item'}" ($${amount}). Payment is pending — let's arrange the details!`,
+          });
+        }
+      } catch (e) {
+        // Don't fail the order if messaging fails
+        console.error('Failed to send order notification message:', e);
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -130,6 +184,52 @@ export function useUpdateOrderStatus() {
         .single();
 
       if (error) throw error;
+
+      // Send notification message in chat
+      try {
+        const order = data;
+        const p1 = order.buyer_id < order.seller_id ? order.buyer_id : order.seller_id;
+        const p2 = order.buyer_id < order.seller_id ? order.seller_id : order.buyer_id;
+
+        const { data: conv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('participant_1', p1)
+          .eq('participant_2', p2)
+          .eq('listing_id', order.listing_id)
+          .maybeSingle();
+
+        if (conv) {
+          const { data: listing } = await supabase
+            .from('listings')
+            .select('title')
+            .eq('id', order.listing_id)
+            .single();
+
+          let messageContent = '';
+          // Determine who triggered the action based on status
+          if (status === 'confirmed') {
+            messageContent = `✅ I confirmed receiving "${listing?.title || 'the item'}". Transaction complete — payment is released!`;
+          } else if (status === 'cancelled') {
+            messageContent = `❌ The order for "${listing?.title || 'the item'}" has been cancelled.`;
+          }
+
+          if (messageContent) {
+            // Get the current user who triggered this
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            if (currentUser) {
+              await supabase.from('messages').insert({
+                conversation_id: conv.id,
+                sender_id: currentUser.id,
+                content: messageContent,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send status update message:', e);
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {

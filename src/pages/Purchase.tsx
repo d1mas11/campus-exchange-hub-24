@@ -100,8 +100,8 @@ export default function Purchase() {
         buyerId: user.id,
       },
       {
-        onSuccess: () => {
-          navigate('/pending');
+        onSuccess: (data) => {
+          navigate(`/order-confirmation/${data.id}`);
         },
       }
     );

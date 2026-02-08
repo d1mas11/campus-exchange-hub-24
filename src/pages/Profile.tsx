@@ -89,6 +89,7 @@ export default function Profile() {
       setUniversity(profile.university || '');
       setAccountNumber(profile.account_number || '');
       setAvatarUrl(profile.avatar_url || null);
+      setSelectedLanguages(profile.languages?.length ? profile.languages : ['English']);
     }
   }, [profile]);
 
@@ -112,6 +113,7 @@ export default function Profile() {
         bio,
         university,
         account_number: accountNumber || null,
+        languages: selectedLanguages,
       })
       .eq('user_id', user.id);
 
