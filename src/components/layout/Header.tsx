@@ -1,14 +1,23 @@
 import { Link, useLocation } from 'react-router-dom';
 import { MessageCircle, User, Plus, Menu, X, Home, Heart, Clock, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { hasUnread, markAsSeen } = useUnreadMessages();
+
+  // Mark messages as seen when user navigates to /messages
+  useEffect(() => {
+    if (location.pathname === '/messages') {
+      markAsSeen();
+    }
+  }, [location.pathname, markAsSeen]);
 
   const navItems = [
     { to: '/', label: 'Browse', icon: Home },
@@ -37,18 +46,22 @@ export function Header() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.to;
+            const showDot = item.to === '/messages' && hasUnread;
             return (
               <Link key={item.to} to={item.to}>
                 <Button
                   variant={isActive ? 'secondary' : 'ghost'}
                   size="sm"
                   className={cn(
-                    'gap-2',
+                    'gap-2 relative',
                     isActive && 'bg-primary/10 text-primary'
                   )}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
+                  {showDot && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive" />
+                  )}
                 </Button>
               </Link>
             );
@@ -90,6 +103,7 @@ export function Header() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
+              const showDot = item.to === '/messages' && hasUnread;
               return (
                 <Link
                   key={item.to}
@@ -99,12 +113,15 @@ export function Header() {
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
                     className={cn(
-                      'w-full justify-start gap-3',
+                      'w-full justify-start gap-3 relative',
                       isActive && 'bg-primary/10 text-primary'
                     )}
                   >
                     <Icon className="h-5 w-5" />
                     <span>{item.label}</span>
+                    {showDot && (
+                      <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-destructive" />
+                    )}
                   </Button>
                 </Link>
               );
