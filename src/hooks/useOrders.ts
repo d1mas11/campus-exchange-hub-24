@@ -96,6 +96,12 @@ export function useCreateOrder() {
 
       if (error) throw error;
 
+      // Mark the listing as sold
+      await supabase
+        .from('listings')
+        .update({ status: 'sold' })
+        .eq('id', listingId);
+
       // Send automatic message in the conversation between buyer and seller
       try {
         // Find or create conversation
@@ -153,6 +159,8 @@ export function useCreateOrder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
       toast({ title: 'Order placed!', description: 'The seller has been notified.' });
     },
     onError: (error: any) => {

@@ -322,10 +322,10 @@ export default function Profile() {
             )}
           </div>
 
-          {/* User Listings */}
+          {/* Active Listings */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-foreground">
-              Your Listings ({userListings.length})
+              Your Listings ({userListings.filter(l => l.status === 'active').length})
             </h2>
             <Link to="/create">
               <Button>
@@ -339,9 +339,9 @@ export default function Profile() {
             <div className="py-12 text-center text-muted-foreground">
               Loading your listings...
             </div>
-          ) : userListings.length > 0 ? (
+          ) : userListings.filter(l => l.status === 'active').length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {userListings.map((listing) => (
+              {userListings.filter(l => l.status === 'active').map((listing) => (
                 <ListingCard 
                   key={listing.id} 
                   listing={listing} 
@@ -358,6 +358,32 @@ export default function Profile() {
                 <Button>Create Your First Listing</Button>
               </Link>
             </div>
+          )}
+
+          {/* Previously Sold */}
+          {userListings.filter(l => l.status === 'sold').length > 0 && (
+            <>
+              <div className="mt-8 mb-4">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Previously Sold ({userListings.filter(l => l.status === 'sold').length})
+                </h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {userListings.filter(l => l.status === 'sold').map((listing) => (
+                  <div key={listing.id} className="relative">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
+                      <span className="rounded-full bg-muted px-4 py-1.5 text-sm font-semibold text-muted-foreground">
+                        Sold
+                      </span>
+                    </div>
+                    <ListingCard 
+                      listing={listing} 
+                      onDelete={() => handleDeleteListing(listing.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>
