@@ -137,8 +137,7 @@ export default function OrderConfirmation() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  After transferring, the seller will ship the item. Once you receive it, 
-                  confirm delivery in your <strong>Orders</strong> page to complete the transaction.
+                  After transferring, coordinate with the seller via chat to arrange pickup or delivery.
                 </p>
               </div>
             ) : (
@@ -179,18 +178,8 @@ export default function OrderConfirmation() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Wait for delivery</p>
-                  <p className="text-sm text-muted-foreground">The seller will ship or deliver the item to you</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Confirm receipt</p>
-                  <p className="text-sm text-muted-foreground">Click "I Received It" in your Orders page to complete the transaction</p>
+                  <p className="font-medium text-foreground">Arrange pickup/delivery</p>
+                  <p className="text-sm text-muted-foreground">Chat with the seller to coordinate how you'll get the item</p>
                 </div>
               </div>
             </div>

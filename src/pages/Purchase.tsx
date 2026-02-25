@@ -9,9 +9,7 @@ import {
   ShoppingBag,
   MessageCircle,
   CheckCircle,
-  Shield,
   CreditCard,
-  Package,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateOrder } from '@/hooks/useOrders';
@@ -152,8 +150,8 @@ export default function Purchase() {
               <ShoppingBag className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Confirm Purchase</h1>
-              <p className="text-sm text-muted-foreground">Review your order details</p>
+              <h1 className="text-2xl font-bold text-foreground">Review Order</h1>
+              <p className="text-sm text-muted-foreground">Check the details before proceeding</p>
             </div>
           </div>
 
@@ -201,48 +199,6 @@ export default function Purchase() {
             )}
           </div>
 
-          {/* How it works - Escrow */}
-          <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-5 w-5 text-accent" />
-              <h3 className="font-semibold text-foreground">Buyer Protection</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
-                  1
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  You place the order — the seller is notified
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
-                  2
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Transfer the payment to the seller's account (shown after order)
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
-                  3
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  <strong>Money is held</strong> until you confirm you received the item
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
-                  4
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Click "Received" in Pending — payment is released to the seller
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
@@ -265,7 +221,7 @@ export default function Purchase() {
               ) : (
                 <CheckCircle className="h-5 w-5 mr-2" />
               )}
-              Confirm Purchase
+              Place Order
             </Button>
           </div>
         </div>

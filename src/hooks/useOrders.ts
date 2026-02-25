@@ -147,7 +147,7 @@ export function useCreateOrder() {
           await supabase.from('messages').insert({
             conversation_id: conversationId,
             sender_id: buyerId,
-            content: `💰 I just placed an order for "${listing?.title || 'this item'}" ($${amount}). Payment is pending — let's arrange the details!`,
+            content: `💰 I just placed an order for "${listing?.title || 'this item'}" ($${amount}). Let's arrange the payment and pickup!`,
           });
         }
       } catch (e) {
@@ -217,7 +217,7 @@ export function useUpdateOrderStatus() {
           let messageContent = '';
           // Determine who triggered the action based on status
           if (status === 'confirmed') {
-            messageContent = `✅ I confirmed receiving "${listing?.title || 'the item'}". Transaction complete — payment is released!`;
+            messageContent = `✅ I confirmed receiving "${listing?.title || 'the item'}". Transaction complete!`;
           } else if (status === 'cancelled') {
             messageContent = `❌ The order for "${listing?.title || 'the item'}" has been cancelled.`;
           }
@@ -243,7 +243,7 @@ export function useUpdateOrderStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       const messages: Record<string, string> = {
-        confirmed: 'You confirmed receiving the item. Payment will be released to the seller.',
+        confirmed: 'You confirmed receiving the item. Transaction complete!',
         cancelled: 'Order has been cancelled.',
       };
       toast({
