@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ interface ChatWindowProps {
 export function ChatWindow({ conversation, messages, currentUserId, onSendMessage, onBack }: ChatWindowProps) {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,15 +50,22 @@ export function ChatWindow({ conversation, messages, currentUserId, onSendMessag
           <img
             src={conversation.otherUserAvatar}
             alt={conversation.otherUserName}
-            className="h-10 w-10 rounded-full object-cover"
+            className="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+            onClick={() => navigate(`/user/${conversation.otherUserId}`)}
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+            onClick={() => navigate(`/user/${conversation.otherUserId}`)}
+          >
             {conversation.otherUserName.charAt(0)}
           </div>
         )}
-        <div>
-          <p className="font-semibold text-foreground">{conversation.otherUserName}</p>
+        <div
+          className="cursor-pointer"
+          onClick={() => navigate(`/user/${conversation.otherUserId}`)}
+        >
+          <p className="font-semibold text-foreground hover:text-primary transition-colors">{conversation.otherUserName}</p>
           <p className="text-xs text-muted-foreground">{conversation.otherUserUniversity}</p>
         </div>
       </div>
