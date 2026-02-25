@@ -107,16 +107,27 @@ function OrderCard({ order, currentUserId }: { order: Order; currentUserId: stri
                 </Button>
               </>
             )}
-            {!isBuyer && order.status === 'pending' && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={updateStatus.isPending}
-              >
-                <XCircle className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
+            {!isBuyer && (order.status === 'pending' || order.status === 'paid') && (
+              <>
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => updateStatus.mutate({ orderId: order.id, status: 'paid' })}
+                  disabled={updateStatus.isPending || order.status === 'paid'}
+                >
+                  <CreditCard className="h-4 w-4 mr-1" />
+                  {order.status === 'paid' ? 'Payment Confirmed' : 'Payment Received'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={updateStatus.isPending}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Cancel
+                </Button>
+              </>
             )}
             <Link to={`/messages?sellerId=${isBuyer ? order.seller_id : order.buyer_id}&itemId=${order.listing_id}`}>
               <Button size="sm" variant="ghost">
