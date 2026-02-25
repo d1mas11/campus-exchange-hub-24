@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ConversationWithDetails } from '@/hooks/useMessages';
@@ -10,6 +11,8 @@ interface ChatListProps {
 }
 
 export function ChatList({ conversations, selectedId, onSelect, hidden }: ChatListProps) {
+  const navigate = useNavigate();
+
   if (conversations.length === 0) {
     return (
       <div className={cn('border-r border-border bg-card overflow-y-auto', hidden && 'hidden lg:block')}>
@@ -21,6 +24,11 @@ export function ChatList({ conversations, selectedId, onSelect, hidden }: ChatLi
       </div>
     );
   }
+
+  const handleAvatarClick = (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation();
+    navigate(`/user/${userId}`);
+  };
 
   return (
     <div className={cn('border-r border-border bg-card overflow-y-auto', hidden && 'hidden lg:block')}>
@@ -38,10 +46,14 @@ export function ChatList({ conversations, selectedId, onSelect, hidden }: ChatLi
               <img
                 src={conv.otherUserAvatar}
                 alt={conv.otherUserName}
-                className="h-12 w-12 rounded-full object-cover"
+                className="h-12 w-12 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                onClick={(e) => handleAvatarClick(e, conv.otherUserId)}
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-medium text-primary-foreground">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-medium text-primary-foreground cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                onClick={(e) => handleAvatarClick(e, conv.otherUserId)}
+              >
                 {conv.otherUserName.charAt(0)}
               </div>
             )}
