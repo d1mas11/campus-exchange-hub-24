@@ -15,6 +15,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Favourites from "./pages/Favourites";
 import Pending from "./pages/Pending";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/user/:userId" element={<UserProfile />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="*" element={<NotFound />} />

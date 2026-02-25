@@ -112,7 +112,14 @@ export function ItemCard({ listing, className }: ItemCardProps) {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
+            <p
+              className="text-sm font-medium text-foreground truncate hover:text-primary hover:underline cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = `/user/${listing.user_id}`;
+              }}
+            >
               {listing.seller_name || 'Anonymous'}
             </p>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
