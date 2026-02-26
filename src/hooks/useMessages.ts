@@ -32,6 +32,7 @@ export interface ConversationWithDetails {
   lastMessage: string | null;
   lastMessageAt: string | null;
   updatedAt: string;
+  hasUnread: boolean;
 }
 
 export function useMessages() {
@@ -89,11 +90,18 @@ export function useMessages() {
         // Fetch last message
         const { data: lastMsg } = await supabase
           .from('messages')
-          .select('content, created_at')
+          .select('content, created_at, sender_id')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
+
+        // Check if conversation has unread messages
+        const lastSeenKey = `lastSeenConv_${user.id}_${conv.id}`;
+        const lastSeen = localStorage.getItem(lastSeenKey);
+        const hasUnread = lastMsg
+          ? (lastMsg.sender_id !== user.id && (!lastSeen || new Date(lastMsg.created_at) > new Date(lastSeen)))
+          : false;
 
         return {
           id: conv.id,
@@ -108,6 +116,7 @@ export function useMessages() {
           lastMessage: lastMsg?.content || null,
           lastMessageAt: lastMsg?.created_at || null,
           updatedAt: conv.updated_at,
+          hasUnread,
         };
       })
     );
@@ -137,10 +146,15 @@ export function useMessages() {
     setSelectedConversationId(conversationId);
     if (conversationId) {
       fetchMessages(conversationId);
+      // Mark conversation as seen
+      if (user) {
+        localStorage.setItem(`lastSeenConv_${user.id}_${conversationId}`, new Date().toISOString());
+        setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, hasUnread: false } : c));
+      }
     } else {
       setMessages([]);
     }
-  }, [fetchMessages]);
+  }, [fetchMessages, user]);
 
   // Find or create a conversation with a seller about a listing
   const findOrCreateConversation = useCallback(async (sellerId: string, listingId?: string): Promise<string | null> => {
