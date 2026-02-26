@@ -221,6 +221,37 @@ export function useMessages() {
     }
   }, [user, selectedConversationId]);
 
+  // Delete a conversation and its messages
+  const deleteConversation = useCallback(async (conversationId: string) => {
+    if (!user) return;
+
+    // Delete messages first (foreign key constraint)
+    await supabase
+      .from('messages')
+      .delete()
+      .eq('conversation_id', conversationId);
+
+    // Delete conversation
+    const { error } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', conversationId);
+
+    if (error) {
+      console.error('Error deleting conversation:', error);
+      return;
+    }
+
+    // Clear selection if deleted conversation was selected
+    if (selectedConversationId === conversationId) {
+      setSelectedConversationId(null);
+      setMessages([]);
+    }
+
+    // Remove from local state
+    setConversations(prev => prev.filter(c => c.id !== conversationId));
+  }, [user, selectedConversationId]);
+
   // Initial fetch
   useEffect(() => {
     fetchConversations();
@@ -268,6 +299,7 @@ export function useMessages() {
     selectConversation,
     findOrCreateConversation,
     sendMessage,
+    deleteConversation,
     loading,
   };
 }

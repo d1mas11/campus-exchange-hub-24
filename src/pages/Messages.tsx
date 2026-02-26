@@ -20,6 +20,7 @@ export default function Messages() {
     selectConversation,
     findOrCreateConversation,
     sendMessage,
+    deleteConversation,
     loading,
   } = useMessages();
 
@@ -52,6 +53,7 @@ export default function Messages() {
             conversations={conversations}
             selectedId={selectedConversationId}
             onSelect={selectConversation}
+            onDelete={deleteConversation}
             hidden={!!selectedConversationId}
           />
 
