@@ -59,11 +59,22 @@ export function ChatList({ conversations, selectedId, onSelect, hidden }: ChatLi
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <p className="font-semibold text-foreground truncate">
-                  {conv.otherUserName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className={cn(
+                    'font-semibold text-foreground truncate',
+                    conv.hasUnread && 'font-bold'
+                  )}>
+                    {conv.otherUserName}
+                  </p>
+                  {conv.hasUnread && (
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary animate-pulse" />
+                  )}
+                </div>
                 {conv.lastMessageAt && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className={cn(
+                    'text-xs text-muted-foreground shrink-0 ml-2',
+                    conv.hasUnread && 'text-primary font-medium'
+                  )}>
                     {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })}
                   </span>
                 )}
@@ -74,7 +85,10 @@ export function ChatList({ conversations, selectedId, onSelect, hidden }: ChatLi
                 </p>
               )}
               {conv.lastMessage && (
-                <p className="text-sm text-muted-foreground truncate">
+                <p className={cn(
+                  'text-sm text-muted-foreground truncate',
+                  conv.hasUnread && 'text-foreground font-medium'
+                )}>
                   {conv.lastMessage}
                 </p>
               )}
